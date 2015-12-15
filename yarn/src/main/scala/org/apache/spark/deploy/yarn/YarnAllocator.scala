@@ -38,7 +38,7 @@ import org.apache.spark.deploy.yarn.YarnSparkHadoopUtil._
 import org.apache.spark.rpc.{RpcCallContext, RpcEndpointRef}
 import org.apache.spark.scheduler.{ExecutorExited, ExecutorLossReason}
 import org.apache.spark.scheduler.cluster.CoarseGrainedClusterMessages.RemoveExecutor
-import org.apache.spark.util.ThreadUtils
+import org.apache.spark.util.{ThreadUtils}
 
 /**
  * YarnAllocator is charged with requesting containers from the YARN ResourceManager and deciding
@@ -70,6 +70,10 @@ private[yarn] class YarnAllocator(
   if (Logger.getLogger(classOf[RackResolver]).getLevel == null) {
     Logger.getLogger(classOf[RackResolver]).setLevel(Level.WARN)
   }
+
+  private val preemptionDelay = conf.getLong("spark.preemption.delay", 10)
+  // A timestamp of when an addition should be triggered. NOT_SET if it has not been set.
+  private var addTime: Long = NOT_SET
 
   // Visible for testing.
   val allocatedHostToContainersMap = new HashMap[String, collection.mutable.Set[ContainerId]]
@@ -257,6 +261,24 @@ private[yarn] class YarnAllocator(
     val missing = targetNumExecutors - numPendingAllocate - numExecutorsRunning
 
     if (missing > 0) {
+      val now = System.currentTimeMillis
+      logInfo(s"now: $now addTime: $addTime")
+      if (missing == targetNumExecutors) {
+        logInfo(s"This is the initial request. Do not delay")
+      } else if (addTime == NOT_SET) {
+        logInfo(s"Not the initial request. $missing executor containers will be requested " +
+          s"in $preemptionDelay seconds")
+        addTime = now + preemptionDelay * 1000
+
+        return
+      } else if (addTime < now) {
+        val diff = now - addTime
+        logInfo(s"Not yet. $diff ms left.")
+        return
+      } else {
+        addTime = NOT_SET
+      }
+
       logInfo(s"Will request $missing executor containers, each with ${resource.getVirtualCores} " +
         s"cores and ${resource.getMemory} MB memory including $memoryOverhead MB overhead")
 
@@ -616,4 +638,5 @@ private object YarnAllocator {
     ("Container killed by YARN for exceeding memory limits." + diag
       + " Consider boosting spark.yarn.executor.memoryOverhead.")
   }
+  val NOT_SET = Long.MaxValue
 }
