@@ -269,10 +269,9 @@ private[yarn] class YarnAllocator(
         logInfo(s"Not the initial request. $missing executor containers will be requested " +
           s"in $preemptionDelay seconds")
         addTime = now + preemptionDelay * 1000
-
         return
-      } else if (addTime < now) {
-        val diff = now - addTime
+      } else if (addTime > now) {
+        val diff = addTime - now
         logInfo(s"Not yet. $diff ms left.")
         return
       } else {
