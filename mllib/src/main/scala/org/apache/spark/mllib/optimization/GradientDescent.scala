@@ -263,7 +263,7 @@ object GradientDescent extends Logging {
 
         previousWeights = currentWeights
         currentWeights = Some(weights)
-        logInfo(s"End of iteration ($i). Loss is ($lossVal)")
+        logInfo(s"End of iteration $i. Loss: $lossVal")
         if (previousWeights != None && currentWeights != None) {
           converged = isConverged(previousWeights.get,
             currentWeights.get, convergenceTol)
