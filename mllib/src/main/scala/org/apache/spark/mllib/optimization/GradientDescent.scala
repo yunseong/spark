@@ -263,7 +263,8 @@ object GradientDescent extends Logging {
 
         previousWeights = currentWeights
         currentWeights = Some(weights)
-        logInfo(s"End of iteration $i. Loss: $lossVal")
+        val timestampNs = System.nanoTime()
+        logInfo(s"End of iteration $i. Loss: $lossVal. Time(ns): $timestampNs")
         if (previousWeights != None && currentWeights != None) {
           converged = isConverged(previousWeights.get,
             currentWeights.get, convergenceTol)
