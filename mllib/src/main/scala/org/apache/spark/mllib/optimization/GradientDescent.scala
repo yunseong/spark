@@ -232,6 +232,7 @@ object GradientDescent extends Logging {
     var converged = false // indicates whether converged based on convergenceTol
     var i = 1
     while (!converged && i <= numIterations) {
+      logInfo(s"Start of Iteration $i")
       val bcWeights = data.context.broadcast(weights)
       // Sample a subset (fraction miniBatchFraction) of the total data
       // compute and sum up the subgradients on this subset (this is one map-reduce)
@@ -252,7 +253,8 @@ object GradientDescent extends Logging {
          * lossSum is computed using the weights from the previous iteration
          * and regVal is the regularization value computed in the previous iteration as well.
          */
-        stochasticLossHistory += lossSum / miniBatchSize + regVal
+        val lossVal = lossSum / miniBatchSize + regVal
+        stochasticLossHistory += lossVal
         val update = updater.compute(
           weights, Vectors.fromBreeze(gradientSum / miniBatchSize.toDouble),
           stepSize, i, regParam)
@@ -261,6 +263,7 @@ object GradientDescent extends Logging {
 
         previousWeights = currentWeights
         currentWeights = Some(weights)
+        logInfo(s"End of iteration ($i). Loss is ($lossVal)")
         if (previousWeights != None && currentWeights != None) {
           converged = isConverged(previousWeights.get,
             currentWeights.get, convergenceTol)
