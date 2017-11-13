@@ -232,7 +232,8 @@ object GradientDescent extends Logging {
     var converged = false // indicates whether converged based on convergenceTol
     var i = 1
     while (!converged && i <= numIterations) {
-      logInfo(s"Start of Iteration $i")
+      val timestampNs = System.nanoTime()
+      logInfo(s"Start of Iteration $i. Time(ns): $timestampNs")
       val bcWeights = data.context.broadcast(weights)
       // Sample a subset (fraction miniBatchFraction) of the total data
       // compute and sum up the subgradients on this subset (this is one map-reduce)
