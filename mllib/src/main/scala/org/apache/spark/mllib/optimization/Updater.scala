@@ -22,6 +22,7 @@ import scala.math._
 import breeze.linalg.{axpy => brzAxpy, norm => brzNorm, Vector => BV}
 
 import org.apache.spark.annotation.DeveloperApi
+import org.apache.spark.internal.Logging
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 
 /**
@@ -38,7 +39,7 @@ import org.apache.spark.mllib.linalg.{Vector, Vectors}
  * regularization term R(w) (if any regularization is used).
  */
 @DeveloperApi
-abstract class Updater extends Serializable {
+abstract class Updater extends Serializable with Logging {
   /**
    * Compute an updated value for weights given the gradient, stepSize, iteration number and
    * regularization parameter. Also returns the regularization value regParam * R(w)
@@ -146,6 +147,7 @@ class SquaredL2Updater extends Updater {
     // w' = w - thisIterStepSize * (gradient + regParam * w)
     // w' = (1 - thisIterStepSize * regParam) * w - thisIterStepSize * gradient
     val thisIterStepSize = stepSize / math.sqrt(iter)
+    logInfo(s"Step size: $stepSize -> $thisIterStepSize")
     val brzWeights: BV[Double] = weightsOld.asBreeze.toDenseVector
     brzWeights :*= (1.0 - thisIterStepSize * regParam)
     brzAxpy(-thisIterStepSize, gradient.asBreeze, brzWeights)

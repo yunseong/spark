@@ -256,9 +256,12 @@ object GradientDescent extends Logging {
          */
         val lossVal = lossSum / miniBatchSize + regVal
         stochasticLossHistory += lossVal
+        val numMiniBatchesPerEpoch = (1 / miniBatchFraction).toInt
+        val epochIdx = (i - 1) / numMiniBatchesPerEpoch + 1
+        logInfo(s"i: $i, numMiniBatchesPerEpoch: $numMiniBatchesPerEpoch, epochIdx: $epochIdx")
         val update = updater.compute(
           weights, Vectors.fromBreeze(gradientSum / miniBatchSize.toDouble),
-          stepSize, ((i + 1) * miniBatchFraction).toInt, regParam)
+          stepSize, epochIdx, regParam)
         weights = update._1
         regVal = update._2
 
