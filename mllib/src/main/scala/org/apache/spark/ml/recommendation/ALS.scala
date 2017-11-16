@@ -906,6 +906,9 @@ object ALS extends DefaultParamsReadable[ALS] with Logging {
       for (iter <- 0 until maxIter) {
         itemFactors = computeFactors(userFactors, userOutBlocks, itemInBlocks, rank, regParam,
           userLocalIndexEncoder, solver = solver)
+
+        var timestampNs1 = System.nanoTime()
+        logInfo(s"End of computing itemFactor in iteration $iter Time(ns): $timestampNs1")
         if (shouldCheckpoint(iter)) {
           val deps = itemFactors.dependencies
           itemFactors.checkpoint()
@@ -914,8 +917,14 @@ object ALS extends DefaultParamsReadable[ALS] with Logging {
           deletePreviousCheckpointFile()
           previousCheckpointFile = itemFactors.getCheckpointFile
         }
+
+        val timestampNs2 = System.nanoTime()
         userFactors = computeFactors(itemFactors, itemOutBlocks, userInBlocks, rank, regParam,
           itemLocalIndexEncoder, solver = solver)
+        logInfo(s"End of computing itemFactor in iteration $iter Time(ns): $timestampNs2")
+
+        val timestampNs3 = System.nanoTime()
+        logInfo(s"End of Iteration $iter Time(ns): $timestampNs3")
       }
     }
     val userIdAndFactors = userInBlocks
